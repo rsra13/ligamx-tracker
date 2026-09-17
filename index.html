@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Sigue la Liga MX: marcadores en vivo, tabla de posiciones, goleadores y estadísticas. Sin anuncios.">
+<title>Liga MX · Marcadores y Estadísticas en Vivo</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-ball" aria-hidden="true">⚽</span>
+    <div>
+      <h1>Liga MX</h1>
+      <p>Marcadores y estadísticas</p>
+    </div>
+  </div>
+  <div class="header-meta">
+    <span id="liveBadge" class="live-badge hidden"><span class="pulse"></span>EN VIVO</span>
+    <span id="updatedAt" class="updated"></span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button data-tab="partidos" class="tab active" role="tab">Partidos</button>
+  <button data-tab="tabla" class="tab" role="tab">Tabla</button>
+  <button data-tab="goleadores" class="tab" role="tab">Goleadores</button>
+  <button data-tab="equipos" class="tab" role="tab">Equipos</button>
+</nav>
+
+<div id="offlineBanner" class="offline-banner hidden">Sin conexión — mostrando los últimos datos guardados.</div>
+
+<main>
+  <!-- PARTIDOS -->
+  <section id="tab-partidos" class="tab-panel">
+    <div class="day-nav">
+      <button id="prevDay" class="day-btn" aria-label="Día anterior">‹</button>
+      <div class="day-center">
+        <h2 id="dayLabel">Hoy</h2>
+        <button id="todayBtn" class="today-btn hidden">Volver a hoy</button>
+      </div>
+      <button id="nextDay" class="day-btn" aria-label="Día siguiente">›</button>
+    </div>
+    <div id="matches" class="matches"></div>
+  </section>
+
+  <!-- TABLA -->
+  <section id="tab-tabla" class="tab-panel" hidden>
+    <p class="tourney-label" data-tourney></p>
+    <div id="standings"></div>
+    <div class="legend">
+      <span><i class="sw direct"></i>Cuartos de final directo</span>
+      <span><i class="sw playin"></i>Play-In</span>
+    </div>
+  </section>
+
+  <!-- GOLEADORES -->
+  <section id="tab-goleadores" class="tab-panel" hidden>
+    <p class="tourney-label" data-tourney></p>
+    <div class="leaders-controls">
+      <button data-lead="goles" class="lead-btn active">Goleadores</button>
+      <button data-lead="vallas" class="lead-btn">Porterías en cero</button>
+    </div>
+    <div id="leaders"></div>
+  </section>
+
+  <!-- EQUIPOS -->
+  <section id="tab-equipos" class="tab-panel" hidden>
+    <p class="tourney-label" data-tourney></p>
+    <div id="teams" class="teams-grid"></div>
+  </section>
+</main>
+
+<!-- Detalle del partido -->
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+  <div class="modal-card">
+    <button id="modalClose" class="modal-close" aria-label="Cerrar">✕</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- Panel de diagnóstico: se activa con ?debug=1 -->
+<div id="debug" class="debug hidden"></div>
+
+<footer class="app-footer">
+  <p>Datos: ESPN · Sin anuncios · La página se actualiza sola</p>
+</footer>
+
+<script src="js/app.js"></script>
+</body>
+</html>
