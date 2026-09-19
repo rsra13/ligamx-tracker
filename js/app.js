@@ -499,6 +499,29 @@
     return name.replace(/([A-Z])/g, ' $1').replace(/^./, function (c) { return c.toUpperCase(); });
   }
 
+  // Goleador/asistencia de un detalle: soporta forma scoreboard (athletesInvolved)
+  // y forma summary (participants[].athlete).
+  function detailScorer(x) {
+    var names = [];
+    if (x.participants && x.participants.length) {
+      names = x.participants.map(function (p) { return (p.athlete && p.athlete.displayName) || ''; });
+    } else {
+      names = (x.athletesInvolved || []).map(function (a) { return a.displayName || ''; });
+    }
+    var own = !!x.ownGoal || /own goal/i.test((x.type && x.type.text) || '');
+    return { scorer: names[0] || '', assist: names[1] || '', ownGoal: own, penalty: !!x.penaltyKick };
+  }
+
+  function detailPlayer(x) {
+    if (x.participants && x.participants.length) return (x.participants[0].athlete || {}).displayName || '';
+    return ((x.athletesInvolved || [])[0] || {}).displayName || '';
+  }
+
+  function rosterStat(stats, name) {
+    var s = (stats || []).filter(function (x) { return x.name === name; })[0];
+    return s ? num(s.value) : 0;
+  }
+
   function openDetail(eventId) {
     var modal = $('modal'), body = $('modalBody');
     modal.classList.remove('hidden');
@@ -532,6 +555,16 @@
     var goals = details.filter(function (x) { return x.scoringPlay; });
     var cards = details.filter(function (x) { return x.redCard || x.yellowCard; });
 
+    // Descripción del gol desde keyEvents ("cómo" se anotó; ESPN la da en inglés).
+    var descByMin = {};
+    (d.keyEvents || []).forEach(function (k) {
+      var kt = (k.type && k.type.text) || '';
+      if (!k.scoringPlay && !/goal/i.test(kt)) return;
+      var min = (k.clock && k.clock.displayValue) || '';
+      var txt = (k.text || '').replace(/^Goal!\s*[^.]+\.\s*/i, '');
+      if (min && txt) descByMin[min] = txt;
+    });
+
     function teamTag(g) {
       var ti = infoOf(g.team && g.team.id);
       if (ti.abbr) return ti.abbr;
@@ -539,19 +572,50 @@
       return isH ? 'LOC' : 'VIS';
     }
     var goalsHTML = goals.length ? '<div class="detail-section"><h3>Goles</h3>' + goals.map(function (g) {
-      var tp = (g.type && g.type.text) || '';
-      return '<div class="goal-row"><span class="goal-min">' + esc((g.clock && g.clock.displayValue) || '') + '</span>' +
-        '<span>⚽ ' + esc(((g.athletesInvolved || [])[0] || {}).displayName || '') +
-        (tp && !/^goal$/i.test(tp) ? ' <span style="color:var(--muted)">(' + esc(tp) + ')</span>' : '') + '</span>' +
+      var sc = detailScorer(g);
+      var min = (g.clock && g.clock.displayValue) || '';
+      var desc = descByMin[min] || '';
+      var tag = sc.ownGoal ? ' <span style="color:var(--muted)">(autogol)</span>'
+        : (sc.penalty ? ' <span style="color:var(--muted)">(penal)</span>' : '');
+      return '<div class="goal-row"><span class="goal-min">' + esc(min) + '</span>' +
+        '<span>⚽ ' + esc(sc.scorer) + tag +
+        (sc.assist ? '<br><span class="goal-assist">Asistencia: ' + esc(sc.assist) + '</span>' : '') +
+        (desc ? '<br><span class="goal-desc">' + esc(desc) + '</span>' : '') + '</span>' +
         '<span class="g-team">' + esc(teamTag(g)) + '</span></div>';
     }).join('') + '</div>' : '';
 
     var cardsHTML = cards.length ? '<div class="detail-section"><h3>Tarjetas</h3>' + cards.map(function (c) {
       return '<div class="goal-row"><span class="goal-min">' + esc((c.clock && c.clock.displayValue) || '') + '</span>' +
         '<span class="card-icon">' + (c.redCard ? '🟥' : '🟨') + ' ' +
-        esc(((c.athletesInvolved || [])[0] || {}).displayName || '') + '</span>' +
+        esc(detailPlayer(c)) + '</span>' +
         '<span class="g-team">' + esc(teamTag(c)) + '</span></div>';
     }).join('') + '</div>' : '';
+
+    // Alineaciones (cuando ESPN las publica: partidos en vivo y finalizados).
+    var lineupsHTML = '';
+    var rosters = d.rosters || [];
+    if (rosters.length) {
+      lineupsHTML = '<div class="detail-section"><h3>Alineaciones</h3><div class="lineup-grid">' +
+        rosters.map(function (r) {
+          var tn = (r.team && (r.team.displayName || r.team.name)) || '';
+          var starters = (r.roster || []).filter(function (p) { return p.starter; });
+          var subs = (r.roster || []).filter(function (p) { return !p.starter; });
+          function prow(p) {
+            var nm = (p.athlete && (p.athlete.displayName || p.athlete.shortName)) || '';
+            var pos = (p.position && p.position.abbreviation) || '';
+            var gg = rosterStat(p.stats, 'totalGoals'), aa = rosterStat(p.stats, 'goalAssists');
+            var ga = (gg || aa) ? ' <span class="pstat">' + (gg ? gg + 'G' : '') + ((gg && aa) ? ' ' : '') + (aa ? aa + 'A' : '') + '</span>' : '';
+            var sub = (p.subbedIn || p.subbedOut) ? ' <span class="pstat">⇄</span>' : '';
+            return '<li><span>' + esc(p.jersey ? p.jersey + ' · ' : '') + esc(nm) + '</span>' +
+              '<span>' + esc(pos) + ga + sub + '</span></li>';
+          }
+          return '<div class="lineup-team"><h4>' + esc(tn) +
+            (r.formation ? ' <span style="color:var(--muted);font-weight:400">· ' + esc(r.formation) + '</span>' : '') + '</h4>' +
+            '<ul>' + starters.map(prow).join('') + '</ul>' +
+            (subs.length ? '<h4 style="margin-top:10px">Suplentes</h4><ul>' + subs.map(prow).join('') + '</ul>' : '') +
+            '</div>';
+        }).join('') + '</div></div>';
+    }
 
     var bsTeams = ((d.boxscore || {}).teams || []);
     var bsHome = bsTeams.filter(function (t) { return home.team && t.team && t.team.id === home.team.id; })[0] || bsTeams[0] || {};
@@ -585,7 +649,7 @@
       '<div class="detail-team">' + logoImg(home.team) + '<span class="dt-name">' + esc((home.team || {}).displayName || '') + '</span></div>' +
       '<div class="detail-score">' + esc(home.score == null ? '–' : home.score) + ' – ' + esc(away.score == null ? '–' : away.score) + '</div>' +
       '<div class="detail-team">' + logoImg(away.team) + '<span class="dt-name">' + esc((away.team || {}).displayName || '') + '</span></div>' +
-      '</div>' + venue + '</div>' + goalsHTML + cardsHTML + statsHTML;
+      '</div>' + venue + '</div>' + goalsHTML + cardsHTML + lineupsHTML + statsHTML;
   }
 
   /* ---------------- header / refresh ---------------- */
