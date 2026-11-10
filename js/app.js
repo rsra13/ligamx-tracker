@@ -13,6 +13,7 @@
     leaderKind: 'goles',
     scoreboard: null,
     season: null,
+    seasonPromise: null,
     teamInfo: {},
     refreshTimer: null,
     lastOk: {}
@@ -186,7 +187,20 @@
   function isRegular(ev) {
     var w = ev.week && ev.week.number;
     if (w != null) return w <= 17;
+    var slug = (ev.season && ev.season.slug) || '';
+    if (slug && !/apertura|clausura/i.test(slug)) return false; // liguilla u otro torneo
     return true;
+  }
+
+  // Un mes guardado solo es definitivo si TODOS sus partidos ya terminaron.
+  // Si alguno seguía pendiente la última vez que se guardó, hay que refrescarlo:
+  // antes los meses pasados se daban por cerrados y un partido jugado en el
+  // cambio de mes (p. ej. América-Toluca, 1 nov) quedaba fuera para siempre.
+  function monthSettled(c) {
+    if (!c || !c.data || !c.data.events || !c.data.events.length) return false;
+    return c.data.events.every(function (e) {
+      return e.status && e.status.type && e.status.type.state === 'post';
+    });
   }
 
   function computeSeason(events, label) {
@@ -204,6 +218,7 @@
       if (!isRegular(ev)) return;
       var hid = s.home.team.id, aid = s.away.team.id;
       var H = rowFor(hid), A = rowFor(aid);
+      if (H.pj >= 17 || A.pj >= 17) return; // ningún equipo juega más de 17 en fase regular
       H.pj++; A.pj++;
       H.gf += hs; H.gc += as; A.gf += as; A.gc += hs;
       if (hs > as) { H.g++; H.form.push('W'); A.p++; A.form.push('L'); }
@@ -248,21 +263,24 @@
 
   function loadSeason(force) {
     if (state.season && !force) return Promise.resolve(state.season);
+    if (state.seasonPromise && !force) return state.seasonPromise;
     var t = tournamentMonths();
     setTourneyLabels(t.label);
     dbg('Torneo:', t.label, 'meses:', t.months.join(','));
     var jobs = t.months.map(function (mm) {
       var key = 'month_' + mm;
-      var c = (!force) ? cache.read(key) : null;
+      var c = cache.read(key);
       var age = c ? Date.now() - c.ts : Infinity;
-      var isCurrent = (mm === t.current);
-      if (c && c.data && c.data.events && (!isCurrent || age < 10 * 60 * 1000)) {
-        dbg('Mes en caché:', mm);
+      // Caché válido: mes ya cerrado (todos sus partidos terminaron) o
+      // copia reciente (<10 min). Un mes con partidos pendientes SIEMPRE
+      // se vuelve a pedir cuando la copia envejece, aunque ya haya pasado.
+      if (c && c.data && c.data.events && (monthSettled(c) || age < 10 * 60 * 1000)) {
+        dbg('Mes en caché:', mm, monthSettled(c) ? '(cerrado)' : '(reciente)');
         return Promise.resolve({ data: c.data, fresh: false });
       }
       return loadWithCache(key, ESPN + '/scoreboard?dates=' + mm);
     });
-    return Promise.all(jobs).then(function (results) {
+    var p = Promise.all(jobs).then(function (results) {
       var seen = {}, events = [];
       results.forEach(function (r) {
         (r.data.events || []).forEach(function (e) {
@@ -284,11 +302,15 @@
           'goleadores:', state.season.scorers.length);
       return state.season;
     });
+    state.seasonPromise = p;
+    p.then(function () { if (state.seasonPromise === p) state.seasonPromise = null; },
+           function () { if (state.seasonPromise === p) state.seasonPromise = null; });
+    return p;
   }
 
-  function ensureSeason(containerId, msg) {
-    $(containerId).innerHTML = loadingHTML(msg);
-    return loadSeason().catch(function () {
+  function ensureSeason(containerId, msg, force) {
+    if (!state.season) $(containerId).innerHTML = loadingHTML(msg);
+    return loadSeason(force).catch(function () {
       $(containerId).innerHTML = errorHTML('No se pudieron cargar los datos del torneo.');
       throw new Error('season failed');
     });
@@ -669,13 +691,13 @@
   function loadCurrentTab(force) {
     if (state.tab === 'partidos') return loadScoreboard(force);
     if (state.tab === 'tabla') {
-      return ensureSeason('standings', 'Calculando tabla…').then(renderStandings).catch(function () {});
+      return ensureSeason('standings', 'Calculando tabla…', force).then(renderStandings).catch(function () {});
     }
     if (state.tab === 'goleadores') {
-      return ensureSeason('leaders', 'Calculando goleadores…').then(renderLeaders).catch(function () {});
+      return ensureSeason('leaders', 'Calculando goleadores…', force).then(renderLeaders).catch(function () {});
     }
     if (state.tab === 'equipos') {
-      return ensureSeason('teams', 'Cargando equipos…').then(renderTeams).catch(function () {});
+      return ensureSeason('teams', 'Cargando equipos…', force).then(renderTeams).catch(function () {});
     }
     return Promise.resolve();
   }
