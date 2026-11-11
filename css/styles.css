@@ -343,16 +343,23 @@ tr.zone-playin td.pos { color: var(--gold); }
 }
 
 /* ---------- Footer ---------- */
-.app-footer { text-align: center; padding: 18px; color: var(--muted); font-size: 12px; }
+.app-footer { text-align: center; padding: 24px 18px 30px; }
 .made-with {
-  display: flex; align-items: center; justify-content: center; gap: 9px;
-  font-size: 13px; color: var(--text); margin-bottom: 9px;
+  display: inline-flex; align-items: center; gap: 11px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 7px 18px 7px 7px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 .made-with img {
-  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
-  border: 1px solid var(--line); background: #fff;
+  width: 40px; height: 40px; display: block;
+  border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--gold);
+  background: #fff;
 }
-.made-with strong { font-weight: 700; }
+.made-with .mw-text { font-size: 14px; color: var(--muted); letter-spacing: 0.2px; white-space: nowrap; }
+.made-with .mw-text strong { color: var(--text); font-weight: 700; }
 
 /* ---------- Loading ---------- */
 .loading { text-align: center; padding: 40px; color: var(--muted); }
