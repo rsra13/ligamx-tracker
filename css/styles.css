@@ -344,6 +344,15 @@ tr.zone-playin td.pos { color: var(--gold); }
 
 /* ---------- Footer ---------- */
 .app-footer { text-align: center; padding: 18px; color: var(--muted); font-size: 12px; }
+.made-with {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  font-size: 13px; color: var(--text); margin-bottom: 9px;
+}
+.made-with img {
+  width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+  border: 1px solid var(--line); background: #fff;
+}
+.made-with strong { font-weight: 700; }
 
 /* ---------- Loading ---------- */
 .loading { text-align: center; padding: 40px; color: var(--muted); }
