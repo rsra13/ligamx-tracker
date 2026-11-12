@@ -326,6 +326,8 @@
     }
     var url = ESPN + '/scoreboard' + (state.dayOffset === 0 ? '' : '?dates=' + dateKey(d));
     $('matches').innerHTML = loadingHTML('Cargando partidos…');
+    $('matches').classList.remove('single');
+    $('matches').classList.remove('two');
     return loadWithCache(key, url).then(function (res) {
       state.scoreboard = { key: key, data: res.data };
       (res.data.events || []).forEach(function (e) {
@@ -382,9 +384,14 @@
     });
 
     if (!events.length) {
+      box.classList.remove('single');
+      box.classList.remove('two');
       box.innerHTML = '<div class="empty">No hay partidos de Liga MX este día.</div>';
       return;
     }
+    // Con 1 o 2 partidos la fila no llena la rejilla: centrar las tarjetas.
+    box.classList.toggle('single', events.length === 1);
+    box.classList.toggle('two', events.length === 2);
 
     box.innerHTML = events.map(function (p) {
       var hs = num(p.home.score), as = num(p.away.score);
