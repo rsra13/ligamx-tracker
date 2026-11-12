@@ -370,3 +370,49 @@ tr.zone-playin td.pos { color: var(--gold); }
   animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Escritorio (móvil queda igual) ---------- */
+@media (min-width: 900px) {
+  main { max-width: 1180px; padding: 24px 24px 56px; }
+
+  /* Pestañas centradas, sin estirarse de orilla a orilla */
+  .tabs { justify-content: center; padding: 10px 24px; }
+  .tab { flex: 0 1 200px; font-size: 15px; padding: 12px 6px; }
+
+  /* Fecha centrada sobre la lista de partidos */
+  .day-nav { max-width: 560px; margin: 6px auto 16px; }
+
+  /* Partidos en dos columnas */
+  .matches { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .match-card { padding: 14px 16px; }
+  .match-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
+
+  /* Tabla más aireada */
+  table.standings { font-size: 14px; }
+  .standings th, .standings td { padding: 12px 10px; }
+
+  /* Goleadores en dos columnas, botones centrados */
+  .leaders-controls { max-width: 560px; margin: 0 auto 14px; }
+  #leaders { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .leader-row { margin-bottom: 0; }
+
+  /* Equipos: tarjetas más grandes */
+  .teams-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .team-card { padding: 18px; }
+  .team-card img { width: 64px; height: 64px; }
+
+  /* Detalle del partido más amplio */
+  .modal-card { max-width: 760px; padding: 24px 28px 32px; }
+  .detail-team img { width: 72px; height: 72px; }
+  .detail-score { font-size: 40px; }
+
+  .app-footer { padding: 32px 18px 40px; }
+  .made-with img { width: 44px; height: 44px; }
+  .made-with .mw-text { font-size: 15px; }
+}
+
+@media (min-width: 1280px) {
+  main { max-width: 1240px; }
+  .matches { grid-template-columns: repeat(3, 1fr); }
+  .leaders-controls { max-width: 640px; }
+}
