@@ -384,6 +384,7 @@ tr.zone-playin td.pos { color: var(--gold); }
 
   /* Partidos en dos columnas */
   .matches { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .matches.single { grid-template-columns: minmax(0, 560px); justify-content: center; }
   .match-card { padding: 14px 16px; }
   .match-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); }
 
@@ -414,5 +415,6 @@ tr.zone-playin td.pos { color: var(--gold); }
 @media (min-width: 1280px) {
   main { max-width: 1240px; }
   .matches { grid-template-columns: repeat(3, 1fr); }
+  .matches.two { grid-template-columns: repeat(2, minmax(0, 420px)); justify-content: center; }
   .leaders-controls { max-width: 640px; }
 }
